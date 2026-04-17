@@ -1,0 +1,28 @@
+services:
+  frontend:
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+
+  user-service:
+    volumes:
+      - ./services/user-service:/app
+      - /app/node_modules
+    command: node src/index.js
+
+  course-service:
+    volumes:
+      - ./services/course-service:/app
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
+
+  analytics-service:
+    volumes:
+      - ./services/analytics-service:/app
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8003 --reload
+
+  ai-tutor-service:
+    volumes:
+      - ./services/ai-tutor-service:/app
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8004 --reload

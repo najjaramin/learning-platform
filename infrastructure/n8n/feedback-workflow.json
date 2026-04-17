@@ -1,0 +1,52 @@
+{
+  "name": "Feedback Workflow",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "feedback", "responseMode": "responseNode" },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ai-tutor-service:8004/api/ai/ask",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [{ "name": "question", "value": "=Résume ce feedback : {{ $json.body.feedback }}" }] }
+      },
+      "name": "AI Analyse",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://analytics-service:8003/api/analytics/event",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "event_type", "value": "feedback" },
+          { "name": "course_id",  "value": "={{ $('Webhook').item.json.body.course_id }}" },
+          { "name": "user_id",    "value": "={{ $('Webhook').item.json.body.user_id }}" }
+        ]}
+      },
+      "name": "Stocker Analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [720, 300]
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={ \"message\": \"Feedback traité\" }" },
+      "name": "Réponse",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [960, 300]
+    }
+  ],
+  "connections": {
+    "Webhook":         { "main": [[{ "node": "AI Analyse",        "type": "main", "index": 0 }]] },
+    "AI Analyse":      { "main": [[{ "node": "Stocker Analytics", "type": "main", "index": 0 }]] },
+    "Stocker Analytics":{ "main": [[{ "node": "Réponse",          "type": "main", "index": 0 }]] }
+  }
+}
